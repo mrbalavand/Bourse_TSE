@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 import pandas_ta as ta
 import pytse_client as tse
 from pytse_client import download_client_types_records
-Name_SQL1=[]
+Name_SQL1=pd.Series([])
 AllStocks = []
 Stock1 = fpy.Get_MarketWatch()
 Stock2 = Stock1[0].Market
@@ -44,7 +44,7 @@ for item in Stock2.keys():
 
 
 for stockname in AllStocks:
-    i1=i1+1
+
     try:
 
         Stock = fpy.Get_Price_History(
@@ -61,6 +61,7 @@ for stockname in AllStocks:
     if Stock is None:
         continue
     try:
+        i1 = i1 + 1
         # print(Stock["Close"])
         # exceldata=Stock['Close']ريال%،چپ            #exceldata.to_excel("data.xlsx")
         # print(DF4['Open'])
@@ -88,7 +89,7 @@ for stockname in AllStocks:
 
         label3 = pd.DataFrame(label2)
         # print(label2)
-
+        date1 =pd.DataFrame( Stock['Close'].keys())
         MFI = ta.mfi(Stock['High'], Stock['Low'], Stock['Close'], Stock['Volume'])
 
         STOCKRSI = ta.stochrsi(Stock['Close'])
@@ -103,11 +104,14 @@ for stockname in AllStocks:
         RSI = ta.rsi(Stock['Close'])
 
 
-
+        i3=0
         for sn in range(0, len(RSI.index)):
-            Name_SQL1.append(stockname)
+            Name_SQL1[i3]=stockname
+            i3=i3+1
 
-        Name_SQL1 = pd.Series(Name_SQL1)
+
+        Name_SQL1 = pd.DataFrame(Name_SQL1)
+
 
         # plt.plot(Stock['Close'],label = 'Price')
         # plt.plot(MFI,label = 'MFI')
@@ -124,16 +128,16 @@ for stockname in AllStocks:
         Sname2 = Sname1.drop(Sname1)
         print(Sname2)
 
-        MainData = pd.concat([MFI, STOCKRSI.RSI1,STOCKRSI.RSI2, MACD.MACD1,MACD.MACD2,MACD.MACD3, SMA, Bollinger.Bollinger1,Bollinger.Bollinger2,Bollinger.Bollinger3,Bollinger.Bollinger4,Bollinger.Bollinger5, MOM, RSI, Stock['Close'] ,Name_SQL1], axis=1,ignore_index=True)
+        MainData = pd.concat([MFI, STOCKRSI.RSI1,STOCKRSI.RSI2, MACD.MACD1,MACD.MACD2,MACD.MACD3, SMA, Bollinger.Bollinger1,Bollinger.Bollinger2,Bollinger.Bollinger3,Bollinger.Bollinger4,Bollinger.Bollinger5, MOM, RSI, Stock['Close'] ], axis=1)
 
         MainData = MainData.fillna(0)
-        MainData.set_axis(['A', 'B', 'C' ,'D', 'E', 'F' ,'G', 'H', 'I' ,'J', 'K', 'L' ,'M', 'N', 'O' ,'P'], axis='columns', inplace=True)
+        #MainData.set_axis(['A', 'B', 'C' ,'D', 'E', 'F' ,'G', 'H', 'I' ,'J', 'K', 'L' ,'M', 'N', 'O' ], axis='columns', inplace=True)
 
-        Maindata1 = pd.concat([MainData.reset_index(), Sname1.reset_index()], axis=1)
+        Maindata1 = pd.concat([MainData.reset_index(drop="true"), Name_SQL1.reset_index(drop="true"),date1.reset_index(drop="true")], axis=1)
 
-        print(MainData.shape[1])
-        row = MainData.shape[0]
-        col = MainData.shape[1]
+        #print(MainData.shape[1])
+        #row = MainData.shape[0]
+        #col = MainData.shape[1]
 
         # conn = pyodbc.connect('Driver={SQL Server};'
         # 'Server=.;'
@@ -141,7 +145,7 @@ for stockname in AllStocks:
         # 'Trusted_Connection=yes;')
 
         # cursor = conn.cursor()
-        MainData.to_sql(name="Data1", con=engine, schema="dbo", if_exists="append", index=False)
+        Maindata1.to_sql(name="Data1", con=engine, schema="dbo", if_exists="append", index=False)
         engine.dispose()
         print(f"stockname is {stockname} {i1}")
     except Exception as e:
